@@ -3,7 +3,14 @@ import {createClient, Provider, dedupExchange, fetchExchange} from "urql";
 import {cacheExchange, Cache, QueryInput} from '@urql/exchange-graphcache'
 import {ThemeProvider, CSSReset} from '@chakra-ui/core'
 import theme from '../theme'
-import {LoginMutation, MeDocument, MeQuery, RegisterMutation} from "../generated/graphql";
+import {
+    LoginMutation,
+    LogoutDocument,
+    LogoutMutation,
+    MeDocument,
+    MeQuery,
+    RegisterMutation
+} from "../generated/graphql";
 
 function betterUpdateQuery<Result, Query>(
     cache: Cache,
@@ -18,13 +25,21 @@ const client = createClient({
     exchanges: [dedupExchange, cacheExchange({
         updates: {
             Mutation: {
+                logout: (_result, args, cache, info) => {
+                    betterUpdateQuery<LogoutMutation, MeQuery>(
+                        cache,
+                        {query: MeDocument},
+                        _result,
+                        () => ({me: null})
+                    );
+                },
                 login: (_result, args, cache, info) => {
                     betterUpdateQuery<LoginMutation, MeQuery>(
                         cache,
                         {query: MeDocument},
                         _result,
                         (result, query) => {
-                            if(result.login.errors) {
+                            if (result.login.errors) {
                                 return query;
                             } else {
                                 return {
@@ -40,7 +55,7 @@ const client = createClient({
                         {query: MeDocument},
                         _result,
                         (result, query) => {
-                            if(result.register.errors) {
+                            if (result.register.errors) {
                                 return query;
                             } else {
                                 return {
@@ -58,12 +73,12 @@ const client = createClient({
     }
 });
 
-function MyApp({Component, pageProps} : any) {
+function MyApp({Component, pageProps}: any) {
     return (
         <Provider value={client}>
             <ThemeProvider theme={theme}>
-                    <CSSReset/>
-                    <Component {...pageProps} />
+                <CSSReset/>
+                <Component {...pageProps} />
             </ThemeProvider>
         </Provider>
     )
